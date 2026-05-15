@@ -12,6 +12,12 @@ load_dotenv(env_path)
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 AI_AVAILABLE = bool(DEEPSEEK_API_KEY)
 
+# CORS настройки - список разрешенных origin
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8001,http://127.0.0.1:8001")
+
+# Rate Limiting настройки
+RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
+
 # Настройки игры
 MAX_ROUNDS = 5
 DEFAULT_BUNKER_CAPACITY = 25
