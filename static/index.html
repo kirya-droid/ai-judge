@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>БУНКЕР v4.0 - ЗВУКИ, АДАПТИВНОСТЬ, ДОСЬЕ</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="terminal-prompt">ТЕРМИНАЛ БУНКЕР v3.0 - СЕРВЕР ПЕРЕЗАПУСКАЕТСЯ ВРУЧНУЮ</div>
+            <h1>БУНКЕР<span>_</span> <span style="font-size:0.5em; color:#0f0;">v3.0</span></h1>
+            <div class="terminal-loader"></div>
+            <input type="text" id="playerName" placeholder="ВВЕДИТЕ ИМЯ" value="ВЫЖИВШИЙ" onfocus="this.value=''" onkeydown="if(event.key==='Enter') joinGame()">
+            <button onclick="joinGame()">> ПОДКЛЮЧИТЬСЯ <</button>
+            <div style="margin-top: 20px; font-size: 0.7rem; opacity: 0.5;">
+                ⚡ ТАЙМЕР ГОЛОСОВАНИЯ: 30 СЕК ⚡ AI ВЕРДИКТ ⚡ reload: OFF
+            </div>
+        </div>
+    </div>
+    
+    <div class="container" id="gameContainer" style="display: none;">
+        <div class="panel players-panel">
+            <h2>ВЫЖИВШИЕ <span class="players-count" id="playersCount">(0)</span></h2>
+            <div id="playersList"></div>
+            <button id="readyButton" onclick="toggleReady()" style="display: none;">[ ГОТОВ ]</button>
+            <button id="resetButton" onclick="resetGame()" style="display: none;">[ СБРОС ]</button>
+        </div>
+
+        <div class="panel game-panel">
+            <div class="phase" id="phaseDisplay">>> ОЖИДАНИЕ <<</div>
+            <div style="font-size:0.7rem; color:#0f0; opacity:0.7; margin-top:5px;">v3.0 - ТАЙМЕР ГОЛОСОВАНИЯ 30 СЕК</div>
+
+            <div class="cards-section">
+                <div class="cards-container" id="cardsContainer"></div>
+            </div>
+
+            <div id="currentSpeakerIndicator">🎤 СЕЙЧАС ГОВОРИТ: НИКТО</div>
+
+            <div class="chat" id="chat"></div>
+            
+            <div class="vote-buttons" id="voteButtons" style="display: none;"></div>
+            
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button class="action-btn" id="startVotingBtn" onclick="startVoting()">НАЧАТЬ ГОЛОСОВАНИЕ</button>
+            </div>
+            
+            <div class="input-area">
+                <textarea id="speechInput" placeholder="> ВВЕДИТЕ СООБЩЕНИЕ..." maxlength="500" disabled></textarea>
+                <button id="micButton" class="mic-button" onclick="toggleMicrophone()" disabled>🎤</button>
+                <button id="sendButton" onclick="sendMessage()" disabled>ПЕРЕДАТЬ</button>
+            </div>
+        </div>
+        
+        <div class="panel ai-panel">
+            <h2>МЫСЛИ AI</h2>
+            <div class="bunker-resources-compact" id="aiBunkerResources">
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiFoodValue">0</span>
+                    <span class="resource-label-compact">🍖</span>
+                </div>
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiWaterValue">0</span>
+                    <span class="resource-label-compact">💧</span>
+                </div>
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiMedicineValue">0</span>
+                    <span class="resource-label-compact">💊</span>
+                </div>
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiMoraleValue">0</span>
+                    <span class="resource-label-compact">❤️</span>
+                </div>
+            </div>
+            <div class="ai-status">
+                > AI РЕЖИМ: <span id="aiStatusText">ПОДКЛЮЧЕНИЕ...</span>
+            </div>
+            <div class="ai-personality-badge">
+                🧠 <span id="aiPersonalityDesc">Загрузка...</span>
+            </div>
+            <div class="thoughts-container" id="aiThoughts"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/sounds.js"></script>
+    <script src="/static/js/game.js"></script>
+</body>
+</html>

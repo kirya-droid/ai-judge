@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill *)",
+      "Bash(.venv-1\\scripts\\python.exe *)"
+    ]
+  },
+  "$version": 3
+}

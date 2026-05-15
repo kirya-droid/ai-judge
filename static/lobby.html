@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>БУНКЕР — ЛОББИ</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body {
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #0f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 2em;
+            text-shadow: 0 0 20px #0f0;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #0a0;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        .lobby-container {
+            width: 100%;
+            max-width: 700px;
+        }
+        /* Форма создания комнаты */
+        .create-form {
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px solid #0f0;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .create-form h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #0f0;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .form-row input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #0a0;
+            color: #0f0;
+            padding: 10px;
+            font-family: inherit;
+            font-size: 1em;
+        }
+        .form-row input:focus {
+            outline: none;
+            border-color: #0f0;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+        .form-row input::placeholder { color: #050; }
+        .btn {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        .btn:hover {
+            background: #0a0;
+            box-shadow: 0 0 15px #0f0;
+        }
+        .btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+        .btn-secondary:hover {
+            background: rgba(0, 255, 0, 0.1);
+        }
+        /* Присоединиться по коду */
+        .join-section {
+            background: rgba(0, 255, 0, 0.03);
+            border: 1px solid #0a0;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+        }
+        .join-section h2 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #0a0;
+        }
+        /* Список комнат */
+        .rooms-section h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px #0f0;
+        }
+        .room-list {
+            list-style: none;
+        }
+        .room-item {
+            background: rgba(0, 255, 0, 0.03);
+            border: 1px solid #0a0;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.2s;
+        }
+        .room-item:hover {
+            border-color: #0f0;
+        }
+        .room-info {
+            flex: 1;
+        }
+        .room-code {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #0f0;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        .room-host {
+            font-size: 0.85em;
+            color: #0a0;
+            margin-top: 3px;
+        }
+        .room-players {
+            font-size: 0.85em;
+            color: #080;
+            margin-top: 2px;
+        }
+        .room-full {
+            color: #f00;
+        }
+        .no-rooms {
+            color: #050;
+            text-align: center;
+            padding: 30px;
+            font-size: 0.9em;
+        }
+        .error-msg {
+            color: #f00;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.5em; }
+            .form-row { flex-direction: column; }
+            .room-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .room-item .btn { width: 100%; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🏚️ БУНКЕР</h1>
+    <div class="subtitle">ЛОББИ — Создай комнату или присоединись к существующей</div>
+
+    <div class="lobby-container">
+        <!-- Создать комнату -->
+        <div class="create-form">
+            <h2>🆕 Создать комнату</h2>
+            <div class="form-row">
+                <input type="text" id="hostNameInput" placeholder="Ваше имя" maxlength="20" autofocus>
+                <button class="btn" id="createBtn" onclick="createRoom()">Создать</button>
+            </div>
+            <div class="error-msg" id="createError"></div>
+        </div>
+
+        <!-- Присоединиться по коду -->
+        <div class="join-section">
+            <h2>🔑 Присоединиться по коду</h2>
+            <div class="form-row">
+                <input type="text" id="joinNameInput" placeholder="Ваше имя" maxlength="20">
+                <input type="text" id="roomCodeInput" placeholder="Код комнаты" maxlength="4" style="text-transform: uppercase; max-width: 120px;">
+                <button class="btn btn-secondary" id="joinBtn" onclick="joinRoom()">Войти</button>
+            </div>
+            <div class="error-msg" id="joinError"></div>
+        </div>
+
+        <!-- Список комнат -->
+        <div class="rooms-section">
+            <h2>📋 Активные комнаты</h2>
+            <ul class="room-list" id="roomList">
+                <li class="no-rooms">Загрузка...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Enter для создания
+        document.getElementById('hostNameInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') createRoom();
+        });
+        document.getElementById('joinNameInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') joinRoom();
+        });
+        document.getElementById('roomCodeInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') joinRoom();
+        });
+
+        // Авто-апдейт списка комнат
+        let refreshInterval = null;
+
+        async function loadRooms() {
+            try {
+                // Cache-busting чтобы браузер не кэшировал ответ
+                const resp = await fetch(`${API_BASE}/api/rooms?_t=${Date.now()}`, {
+                    cache: 'no-store'
+                });
+                const rooms = await resp.json();
+                const list = document.getElementById('roomList');
+
+                if (rooms.length === 0) {
+                    list.innerHTML = '<li class="no-rooms">Нет активных комнат. Создайте первую!</li>';
+                    return;
+                }
+
+                list.innerHTML = rooms.map(r => `
+                    <li class="room-item">
+                        <div class="room-info">
+                            <div class="room-code">${r.code}</div>
+                            <div class="room-host">Хост: ${r.host}</div>
+                            <div class="room-players ${r.players >= r.max_players ? 'room-full' : ''}">
+                                Игроки: ${r.players}/${r.max_players}
+                                ${r.players >= r.max_players ? ' (ЗАПОЛНЕНА)' : ''}
+                            </div>
+                        </div>
+                        <button class="btn" onclick="quickJoin('${r.code}')"
+                            ${r.players >= r.max_players ? 'disabled' : ''}>
+                            Войти
+                        </button>
+                    </li>
+                `).join('');
+            } catch (e) {
+                console.error('Ошибка загрузки комнат:', e);
+            }
+        }
+
+        async function createRoom() {
+            const name = document.getElementById('hostNameInput').value.trim();
+            const errEl = document.getElementById('createError');
+            errEl.textContent = '';
+
+            if (!name || name.length < 2) {
+                errEl.textContent = 'Имя должно быть минимум 2 символа';
+                return;
+            }
+
+            const btn = document.getElementById('createBtn');
+            btn.disabled = true;
+            btn.textContent = 'Создание...';
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rooms`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ host_name: name })
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    errEl.textContent = err.detail || 'Ошибка создания комнаты';
+                    return;
+                }
+
+                const room = await resp.json();
+                // Переходим в игру
+                window.location.href = `/game/${room.code}?name=${encodeURIComponent(name)}`;
+            } catch (e) {
+                errEl.textContent = 'Ошибка соединения с сервером';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Создать';
+            }
+        }
+
+        async function joinRoom() {
+            const name = document.getElementById('joinNameInput').value.trim();
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            const errEl = document.getElementById('joinError');
+            errEl.textContent = '';
+
+            if (!name || name.length < 2) {
+                errEl.textContent = 'Введите имя (мин. 2 символа)';
+                return;
+            }
+            if (!code || code.length < 2) {
+                errEl.textContent = 'Введите код комнаты';
+                return;
+            }
+
+            const btn = document.getElementById('joinBtn');
+            btn.disabled = true;
+            btn.textContent = 'Подключение...';
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/rooms/${code}`);
+                if (!resp.ok) {
+                    errEl.textContent = 'Комната не найдена';
+                    return;
+                }
+                const room = await resp.json();
+                if (room.players >= room.max_players) {
+                    errEl.textContent = 'Комната заполнена';
+                    return;
+                }
+                window.location.href = `/game/${room.code}?name=${encodeURIComponent(name)}`;
+            } catch (e) {
+                errEl.textContent = 'Ошибка соединения с сервером';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Войти';
+            }
+        }
+
+        async function quickJoin(code) {
+            const name = prompt('Введите ваше имя:');
+            if (!name || name.trim().length < 2) return;
+
+            window.location.href = `/game/${code}?name=${encodeURIComponent(name.trim())}`;
+        }
+
+        // Загрузка при старте
+        loadRooms();
+        refreshInterval = setInterval(loadRooms, 2000); // Обновление каждые 2 секунды
+    </script>
+</body>
+</html>

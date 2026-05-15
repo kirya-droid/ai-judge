@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>БУНКЕР — ИГРА</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .room-code-bar {
+            background: rgba(0,255,0,0.1);
+            border: 1px solid #0a0;
+            padding: 5px 15px;
+            text-align: center;
+            font-size: 0.85em;
+            color: #0a0;
+        }
+        .room-code-bar span {
+            color: #0f0;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0,255,0,0.5);
+        }
+        .room-code-bar a {
+            color: #0a0;
+            margin-left: 15px;
+            text-decoration: none;
+        }
+        .room-code-bar a:hover { color: #0f0; }
+    </style>
+</head>
+<body>
+    <!-- Полоска с кодом комнаты -->
+    <div class="room-code-bar">
+        🏠 Комната: <span id="roomCodeDisplay">---</span>
+        <a href="/">← В лобби</a>
+    </div>
+
+    <div class="container" id="gameContainer">
+        <div class="panel players-panel">
+            <h2>ВЫЖИВШИЕ <span class="players-count" id="playersCount">(0)</span></h2>
+            <div id="playersList"></div>
+            <button id="readyButton" onclick="toggleReady()" style="display: none;">[ ГОТОВ ]</button>
+            <button id="resetButton" onclick="resetGame()" style="display: none;">[ СБРОС ]</button>
+        </div>
+
+        <div class="panel game-panel">
+            <div class="phase" id="phaseDisplay">>> ОЖИДАНИЕ <<</div>
+
+            <div class="cards-section">
+                <div class="cards-container" id="cardsContainer"></div>
+            </div>
+
+            <div id="currentSpeakerIndicator">🎤 СЕЙЧАС ГОВОРИТ: НИКТО</div>
+
+            <div class="chat" id="chat"></div>
+
+            <div class="vote-buttons" id="voteButtons" style="display: none;"></div>
+
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button class="action-btn" id="startVotingBtn" onclick="startVoting()">НАЧАТЬ ГОЛОСОВАНИЕ</button>
+            </div>
+
+            <div class="input-area">
+                <textarea id="speechInput" placeholder="> ВВЕДИТЕ СООБЩЕНИЕ..." maxlength="500" disabled></textarea>
+                <button id="micButton" class="mic-button" onclick="toggleMicrophone()" disabled>🎤</button>
+                <button id="sendButton" onclick="sendMessage()" disabled>ПЕРЕДАТЬ</button>
+            </div>
+        </div>
+
+        <div class="panel ai-panel">
+            <h2>МЫСЛИ AI</h2>
+            <div class="bunker-resources-compact" id="aiBunkerResources">
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiFoodValue">0</span>
+                    <span class="resource-label-compact">🍖</span>
+                </div>
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiWaterValue">0</span>
+                    <span class="resource-label-compact">💧</span>
+                </div>
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiMedicineValue">0</span>
+                    <span class="resource-label-compact">💊</span>
+                </div>
+                <div class="resource-item-compact">
+                    <span class="resource-value-compact" id="aiMoraleValue">0</span>
+                    <span class="resource-label-compact">❤️</span>
+                </div>
+            </div>
+            <div class="ai-status">
+                > AI РЕЖИМ: <span id="aiStatusText">ПОДКЛЮЧЕНИЕ...</span>
+            </div>
+            <div class="ai-personality-badge">
+                🧠 <span id="aiPersonalityDesc">Загрузка...</span>
+            </div>
+            <div class="thoughts-container" id="aiThoughts"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/sounds.js"></script>
+    <script src="/static/js/game.js"></script>
+    <script>
+        // Получаем room_code и name из URL
+        const pathParts = window.location.pathname.split('/');
+        const ROOM_CODE = pathParts[2] || '';
+        const urlParams = new URLSearchParams(window.location.search);
+        const PLAYER_NAME = urlParams.get('name') || '';
+
+        if (!ROOM_CODE || !PLAYER_NAME) {
+            document.body.innerHTML = '<div style="color:#f00;text-align:center;padding:50px;font-family:monospace;font-size:1.2em;">Ошибка: нет кода комнаты или имени.<br><br><a href="/" style="color:#0f0;">← Вернуться в лобби</a></div>';
+        } else {
+            document.getElementById('roomCodeDisplay').textContent = ROOM_CODE;
+            playerName = PLAYER_NAME;
+            connectWebSocket();
+        }
+
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.host}/ws/${ROOM_CODE}/${encodeURIComponent(PLAYER_NAME)}`;
+            console.log('> ПОДКЛЮЧЕНИЕ К:', wsUrl);
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('> WEBSOCKET ПОДКЛЮЧЕН');
+                document.getElementById('gameContainer').style.display = 'grid';
+                addMessage('СИСТЕМА', '> ПОДКЛЮЧЕНИЕ К БУНКЕРУ УСТАНОВЛЕНО', 'system');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('> ПРИНЯТО:', data.type, data);
+                    handleWebSocketMessage(data);
+                } catch (e) {
+                    console.error('> ОШИБКА ПАРСИНГА:', e);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('> WEBSOCKET ЗАКРЫТ');
+                addMessage('СИСТЕМА', '⚠️ СОЕДИНЕНИЕ ПОТЕРЯНО. <a href="/" style="color:#0f0;">ВЕРНУТЬСЯ В ЛОББИ</a>', 'system');
+                document.getElementById('aiStatusText').textContent = '> OFFLINE';
+                document.getElementById('aiStatusText').style.color = '#f00';
+            };
+
+            ws.onerror = () => {
+                console.error('> WEBSOCKET ОШИБКА');
+                addMessage('СИСТЕМА', '❌ ОШИБКА СОЕДИНЕНИЯ', 'system');
+            };
+        }
+    </script>
+</body>
+</html>
