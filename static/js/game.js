@@ -481,7 +481,7 @@ function updateGameState(game) {
 
     const drawBtn = document.getElementById('drawThreatBtn');
     if (drawBtn) {
-        drawBtn.disabled = !gameStarted || currentPhase !== 'discussion';
+        drawBtn.disabled = !gameStarted || (currentPhase !== 'discussion' && currentPhase !== 'final_word');
     }
 }
 
@@ -1377,7 +1377,7 @@ function startListening() {
     const speechInput = document.getElementById('speechInput');
     const micButton = document.getElementById('micButton');
 
-    if (!gameStarted || currentPhase !== 'discussion' || currentTurn !== playerName) {
+    if (!gameStarted || (currentPhase !== 'discussion' && currentPhase !== 'final_word') || currentTurn !== playerName) {
         addMessage('СИСТЕМА', '> ⏳ Сейчас нельзя использовать микрофон', 'system');
         return;
     }
