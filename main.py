@@ -14,9 +14,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from config.settings import LOG_LEVEL
+from config.settings import LOG_LEVEL, ALLOWED_ORIGINS
 from repositories.game_repo import GameRepository
 from services.room_manager import init_room_manager
+from services.persistent_game_service import PersistentGameService
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
 
 # ============ НАСТРОЙКА ЛОГИРОВАНИЯ ============
 log_handler = logging.FileHandler('game_server.log', mode='a', encoding='utf-8')
@@ -41,6 +46,11 @@ async def lifespan(app: FastAPI):
         repo = GameRepository()
         await repo.init_db()
         logger.info("SQLite инициализирован")
+        
+        # Инициализируем персистентный сервис
+        persistent_service = PersistentGameService(repo)
+        await persistent_service.init_db()
+        logger.info("PersistentGameService инициализирован")
     except Exception as e:
         logger.error(f"Ошибка инициализации БД: {e}")
 
@@ -54,12 +64,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Бункер", version="4.0.0", lifespan=lifespan)
 
-# CORS middleware
+# Rate Limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# CORS middleware - ограниченный доступ
+allowed_origins = ALLOWED_ORIGINS.split(",") if ALLOWED_ORIGINS else ["http://localhost:8001", "http://127.0.0.1:8001"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 

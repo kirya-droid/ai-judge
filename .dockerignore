@@ -1,0 +1,12 @@
+# Игнорируем файлы логов и БД
+game_server.log
+game_log.json
+game_state.db
+*.pyc
+__pycache__/
+.env
+
+# Docker
+.dockerignore
+docker-compose.yml
+Dockerfile

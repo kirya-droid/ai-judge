@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  bunker-game:
+    build: .
+    container_name: bunker-game-server
+    ports:
+      - "8001:8001"
+    environment:
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      # Сохраняем базу данных и логи между перезапусками
+      - bunker-data:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  bunker-data:
+    driver: local
